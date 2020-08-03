@@ -36,3 +36,16 @@ struct GeohashBox {
         return (latitude: latitude, longitude: longitude)
     }
 }
+
+#if canImport(MapKit)
+import MapKit
+
+extension GeohashBox {
+    var mapRect: MKMapRect {
+        let point = self.point
+        let size = self.size
+
+        return MKMapRect.init(x: point.latitude, y: point.longitude, width: size.latitude, height: size.longitude)
+    }
+}
+#endif
