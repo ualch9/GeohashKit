@@ -52,11 +52,11 @@ extension GeohashBox {
         let point = self.point
         let size = self.size
 
-        return MKCoordinateRegion(center: CLLocationCoordinate2D(
-                                    latitude: point.latitude,
-                                    longitude: point.longitude),
-                                  latitudinalMeters: size.latitude,
-                                  longitudinalMeters: size.longitude)
+        let span = MKCoordinateSpan(latitudeDelta: size.latitude,
+                                    longitudeDelta: size.longitude)
+
+        return MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: point.latitude,
+                                                                 longitude: point.longitude), span: span)
     }
 }
 #endif
