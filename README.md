@@ -1,6 +1,11 @@
 # GeohashKit
+![Swift](https://github.com/ualch9/GeohashKit/workflows/Swift/badge.svg)
 
 GeohashKit is a native Swift implementation of the geohash hashing algorithem. Supporting encode, decode and neighbor search. This is an indirect fork of [maximveksler/Geohashkit](https://github.com/maximveksler/GeohashKit), meant for Swift Package Manager support.
+
+## Platforms
+- iOS, macOS, watchOS, tvOS
+- Ubuntu
 
 ## API
 
