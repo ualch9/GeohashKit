@@ -47,5 +47,16 @@ extension GeohashBox {
 
         return MKMapRect.init(x: point.latitude, y: point.longitude, width: size.latitude, height: size.longitude)
     }
+
+    var coordinateRegion: MKCoordinateRegion {
+        let point = self.point
+        let size = self.size
+
+        return MKCoordinateRegion(center: CLLocationCoordinate2D(
+                                    latitude: point.latitude,
+                                    longitude: point.longitude),
+                                  latitudinalMeters: size.latitude,
+                                  longitudinalMeters: size.longitude)
+    }
 }
 #endif
