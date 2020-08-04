@@ -1,6 +1,5 @@
 //
-//  File.swift
-//  
+//  Geohash+MapKit.swift
 //
 //  Created by Alan Chu on 8/2/20.
 //
@@ -9,12 +8,24 @@
 import MapKit
 
 extension Geohash {
-    public static func encode(latitude: Double, longitude: Double, _ precision: Int = Geohash.defaultPrecision) -> MKMapRect {
-        return self.geohashbox(latitude: latitude, longitude: longitude, precision)!.mapRect
-    }
+    public var region: MKCoordinateRegion {
+        let coordinates = CLLocationCoordinate2D(latitude: self.latitude, longitude: self.longitude)
+        let size = self.box.size
 
-    public static func encode(latitude: Double, longitude: Double, _ precision: Int = Geohash.defaultPrecision) -> MKCoordinateRegion {
-        return self.geohashbox(latitude: latitude, longitude: longitude, precision)!.coordinateRegion
+        let span = MKCoordinateSpan(latitudeDelta: size.latitude,
+                                    longitudeDelta: size.longitude)
+
+        return MKCoordinateRegion(center: coordinates, span: span)
+    }
+}
+#endif
+
+#if canImport(CoreLocation)
+import CoreLocation
+
+extension Geohash {
+    public init?(_ coordinates: CLLocationCoordinate2D, precision: Int) {
+        self.init(coordinates: (coordinates.latitude, coordinates.longitude), precision: precision)
     }
 }
 #endif

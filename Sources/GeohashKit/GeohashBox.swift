@@ -3,13 +3,27 @@
 //  Original by Maxim Veksler. Redistributed under MIT license.
 //
 
+enum Parity {
+    case even, odd
+}
+
+prefix func !(a: Parity) -> Parity {
+    return a == .even ? .odd : .even
+}
+
 struct GeohashBox {
+    // MARK: - Constants
+    private static let DecimalToBase32Map = Array("0123456789bcdefghjkmnpqrstuvwxyz") // decimal to 32base mapping (0 => "0", 31 => "z")
+    private static let Base32BitflowInit: UInt8 = 0b10000
+
+    // MARK: - Properties
     let hash: String
 
     let north: Double // top latitude
     let west: Double // left longitude
     let south: Double // bottom latitude
     let east: Double // right longitude
+
     var point: (latitude: Double, longitude: Double) {
         let latitude = (self.north + self.south) / 2
         let longitude = (self.east + self.west) / 2
@@ -35,28 +49,97 @@ struct GeohashBox {
 
         return (latitude: latitude, longitude: longitude)
     }
-}
 
-#if canImport(MapKit)
-import MapKit
+    init?(coordinates: Geohash.Coordinates, precision: Int) {
+        var lat = (-90.0, 90.0)
+        var lon = (-180.0, 180.0)
 
-extension GeohashBox {
-    var mapRect: MKMapRect {
-        let point = self.point
-        let size = self.size
+        // to be generated result.
+        var geohash = String()
 
-        return MKMapRect.init(x: point.latitude, y: point.longitude, width: size.latitude, height: size.longitude)
+        // Loop helpers
+        var parity_mode = Parity.even;
+        var base32char = 0
+        var bit = GeohashBox.Base32BitflowInit
+
+        repeat {
+            switch (parity_mode) {
+            case .even:
+                let mid = (lon.0 + lon.1) / 2
+                if (coordinates.longitude >= mid) {
+                    base32char |= Int(bit)
+                    lon.0 = mid;
+                } else {
+                    lon.1 = mid;
+                }
+            case .odd:
+                let mid = (lat.0 + lat.1) / 2
+                if(coordinates.latitude >= mid) {
+                    base32char |= Int(bit)
+                    lat.0 = mid;
+                } else {
+                    lat.1 = mid;
+                }
+            }
+
+            // Flip between Even and Odd
+            parity_mode = !parity_mode
+            // And shift to next bit
+            bit >>= 1
+
+            if(bit == 0b00000) {
+                geohash += String(GeohashBox.DecimalToBase32Map[base32char])
+                bit = GeohashBox.Base32BitflowInit // set next character round.
+                base32char = 0
+            }
+
+        } while geohash.count < precision
+
+        self.hash = geohash
+        self.north = lat.1
+        self.west = lon.0
+        self.south = lat.0
+        self.east = lon.1
     }
 
-    var coordinateRegion: MKCoordinateRegion {
-        let point = self.point
-        let size = self.size
+    init?(hash: String) {
+        var parity_mode = Parity.even
+        var lat = (-90.0, 90.0)
+        var lon = (-180.0, 180.0)
 
-        let span = MKCoordinateSpan(latitudeDelta: size.latitude,
-                                    longitudeDelta: size.longitude)
+        for c in hash {
+            guard let bitmap = GeohashBox.DecimalToBase32Map.firstIndex(of: c) else {
+                // Break on non geohash code char.
+                return nil
+            }
 
-        return MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: point.latitude,
-                                                                 longitude: point.longitude), span: span)
+            var mask = Int(GeohashBox.Base32BitflowInit)
+            while mask != 0 {
+
+                switch (parity_mode) {
+                case .even:
+                    if(bitmap & mask != 0) {
+                        lon.0 = (lon.0 + lon.1) / 2
+                    } else {
+                        lon.1 = (lon.0 + lon.1) / 2
+                    }
+                case .odd:
+                    if(bitmap & mask != 0) {
+                        lat.0 = (lat.0 + lat.1) / 2
+                    } else {
+                        lat.1 = (lat.0 + lat.1) / 2
+                    }
+                }
+
+                parity_mode = !parity_mode
+                mask >>= 1
+            }
+        }
+
+        self.hash = hash
+        self.north = lat.1
+        self.west = lon.0
+        self.south = lat.0
+        self.east = lon.1
     }
 }
-#endif
