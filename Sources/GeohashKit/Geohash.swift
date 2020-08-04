@@ -37,6 +37,10 @@ public struct Geohash {
     private static let Base32BitflowInit: UInt8 = 0b10000
 
     // MARK: - Public properties
+    public var coordinates: Coordinates {
+        return (latitude, longitude)
+    }
+
     /// The latitude value (measured in degrees) of the center of the cell.
     public var latitude: Double {
         return (self.north + self.south) / 2
