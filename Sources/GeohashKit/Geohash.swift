@@ -11,6 +11,7 @@ prefix func !(a: Parity) -> Parity {
     return a == .even ? .odd : .even
 }
 
+/// A geohash is a rectangular cell expressing a location using an ASCII string, the size of which is determined by how long the string is, the longer, the more precise.
 public struct Geohash {
     // MARK: - Types
     enum CompassPoint {
@@ -36,14 +37,17 @@ public struct Geohash {
     private static let Base32BitflowInit: UInt8 = 0b10000
 
     // MARK: - Public properties
+    /// The latitude value (measured in degrees) of the center of the cell.
     public var latitude: Double {
         return (self.north + self.south) / 2
     }
 
+    /// The longitude value (measured in degrees) of the center of the cell.
     public var longitude: Double {
         return (self.east + self.west) / 2
     }
 
+    /// The latitude/longitude delta (measured in degrees) of the cell, used for determining the dimensions of the cell.
     public var size: Coordinates {
         // * possible case examples:
         //
@@ -64,6 +68,24 @@ public struct Geohash {
     }
 
     public let geohash: Hash
+
+    /// The number of characters in the hash.
+    /// Refer to the table below for approximate cell size.
+    /// ```
+    /// Precision   Cell width      Cell height
+    ///         1   ≤ 5,000km   x   5,000km
+    ///         2   ≤ 1,250km   x   625km
+    ///         3   ≤ 156km     x   156km
+    ///         4   ≤ 39.1km    x   19.5km
+    ///         5   ≤ 4.89km    x   4.89km
+    ///         6   ≤ 1.22km    x   0.61km
+    ///         7   ≤ 153m      x   153m
+    ///         8   ≤ 38.2m     x   19.1m
+    ///         9   ≤ 4.77m     x   4.77m
+    ///        10   ≤ 1.19m     x   0.596m
+    ///        11   ≤ 149mm     x   149mm
+    ///        12   ≤ 37.2mm    x   18.6mm
+    /// ```
     public var precision: Int {
         return geohash.count
     }
@@ -76,12 +98,31 @@ public struct Geohash {
 
     // MARK: - Initializers
 
-    public init(coordinates: Coordinates, precision: Int = Geohash.defaultPrecision) {
+    /// Creates a geohash based on the provided coordinates and the requested precision.
+    /// - parameter coordinates: The coordinates to use for generating the hash.
+    /// - parameter precision: The number of characters to generate.
+    ///     ```
+    ///     Precision   Cell width      Cell height
+    ///             1   ≤ 5,000km   x   5,000km
+    ///             2   ≤ 1,250km   x   625km
+    ///             3   ≤ 156km     x   156km
+    ///             4   ≤ 39.1km    x   19.5km
+    ///             5   ≤ 4.89km    x   4.89km
+    ///             6   ≤ 1.22km    x   0.61km
+    ///             7   ≤ 153m      x   153m
+    ///             8   ≤ 38.2m     x   19.1m
+    ///             9   ≤ 4.77m     x   4.77m
+    ///            10   ≤ 1.19m     x   0.596m
+    ///            11   ≤ 149mm     x   149mm
+    ///            12   ≤ 37.2mm    x   18.6mm
+    ///     ```
+    /// - returns: If the specified coordinates are invalid, this returns nil.
+    public init?(coordinates: Coordinates, precision: Int = Geohash.defaultPrecision) {
         var lat = (-90.0, 90.0)
         var lon = (-180.0, 180.0)
 
         // to be generated result.
-        var generatedHash = String()
+        var generatedHash = Hash()
 
         // Loop helpers
         var parity_mode = Parity.even;
@@ -114,7 +155,7 @@ public struct Geohash {
             bit >>= 1
 
             if(bit == 0b00000) {
-                generatedHash += String(Geohash.DecimalToBase32Map[base32char])
+                generatedHash += Hash(Geohash.DecimalToBase32Map[base32char])
                 bit = Geohash.Base32BitflowInit // set next character round.
                 base32char = 0
             }
@@ -129,7 +170,10 @@ public struct Geohash {
         self.geohash = generatedHash
     }
 
-    public init?(geohash hash: String) {
+    /// Try to create a geohash based on an existing hash. Useful for finding the center coordinate of the hash.
+    /// - parameter hash: The existing hash to reverse hash.
+    /// - returns: If the provided `hash` is invalid, this will return `nil`.
+    public init?(geohash hash: Hash) {
         var parity_mode = Parity.even
         var lat = (-90.0, 90.0)
         var lon = (-180.0, 180.0)
