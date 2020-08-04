@@ -10,7 +10,7 @@ import MapKit
 extension Geohash {
     public var region: MKCoordinateRegion {
         let coordinates = CLLocationCoordinate2D(latitude: self.latitude, longitude: self.longitude)
-        let size = self.box.size
+        let size = self.size
 
         let span = MKCoordinateSpan(latitudeDelta: size.latitude,
                                     longitudeDelta: size.longitude)
