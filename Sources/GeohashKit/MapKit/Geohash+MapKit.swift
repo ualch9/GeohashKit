@@ -104,7 +104,7 @@ extension MKCoordinateRegion {
     }
 }
 
-public extension MKMapRect {
+extension MKMapRect {
     init(_ coordinateRegion: MKCoordinateRegion) {
         let topLeft = CLLocationCoordinate2D(
             latitude: coordinateRegion.center.latitude + (coordinateRegion.span.latitudeDelta/2.0),
