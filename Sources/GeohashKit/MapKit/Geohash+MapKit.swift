@@ -67,10 +67,21 @@ extension MKCoordinateRegion {
 
             repeat {
                 hashes.insert(currentGeohash)
-                currentGeohash = currentGeohash.neighbor(direction: .east)!
+
+                // If unable to get the next neighbor, break out of this iteration.
+                guard let eastNeighbor = currentGeohash.neighbor(direction: .east) else {
+                    break
+                }
+
+                currentGeohash = eastNeighbor
             } while currentGeohash.intersects(self)
 
-            currentLeftMostGeohash = currentLeftMostGeohash.neighbor(direction: .south)!
+            // If unable to get the next row, break out of this loop.
+            guard let southNeighbor = currentLeftMostGeohash.neighbor(direction: .south) else {
+                break
+            }
+
+            currentLeftMostGeohash = southNeighbor
         } while currentLeftMostGeohash.intersects(self)
 
         return hashes
