@@ -12,7 +12,7 @@ prefix func !(a: Parity) -> Parity {
 }
 
 /// A geohash is a rectangular cell expressing a location using an ASCII string, the size of which is determined by how long the string is, the longer, the more precise.
-public struct Geohash {
+public struct Geohash: Hashable, Equatable {
     // MARK: - Types
     enum CompassPoint {
         /// Top
@@ -281,5 +281,14 @@ public struct Geohash {
         }
 
         return Geohash(coordinates: (latitude, longitude), precision: self.precision)
+    }
+
+    // MARK: - Hashable methods
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(geohash)
+    }
+
+    public static func ==(_ lhs: Geohash, _ rhs: Geohash) -> Bool {
+        return lhs.geohash == rhs.geohash
     }
 }

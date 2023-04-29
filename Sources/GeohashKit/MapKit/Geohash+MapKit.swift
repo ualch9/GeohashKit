@@ -18,6 +18,82 @@ extension Geohash {
 
         return MKCoordinateRegion(center: coordinates, span: span)
     }
+
+    func intersects(_ region: MKCoordinateRegion) -> Bool {
+        let lhsRect = MKMapRect(self.region)
+        let rhsRect = MKMapRect(region)
+
+        return lhsRect.intersects(rhsRect)
+    }
+}
+
+extension MKCoordinateRegion {
+    public func geohashes(precision: Int) -> Set<Geohash> {
+        guard let origin = Geohash(self.center, precision: precision) else {
+            return []
+        }
+
+        // Get the most northwest geohash of the region
+        let northwestHash = recursiveUntilBounds(going: .west, recursiveUntilBounds(going: .north, origin))
+
+        var hashes: Set<Geohash> = []
+
+        // Snakes thru geohash grids
+        var currentLeftMostGeohash: Geohash = northwestHash
+        
+        repeat {
+            var currentGeohash: Geohash = currentLeftMostGeohash
+
+            repeat {
+                hashes.insert(currentGeohash)
+                currentGeohash = currentGeohash.neighbor(direction: .east)!
+            } while currentGeohash.intersects(self)
+
+            currentLeftMostGeohash = currentLeftMostGeohash.neighbor(direction: .south)!
+        } while currentLeftMostGeohash.intersects(self)
+
+        return hashes
+    }
+
+    /// Recursively traverses Geohashes in the specified direction until it reaches the top of this MKCoordinateRegion.
+    private func recursiveUntilBounds(going direction: Geohash.CompassPoint, _ geohash: Geohash) -> Geohash {
+        guard let neighbor = geohash.neighbor(direction: direction) else {
+            return geohash
+        }
+
+        let selfRect = MKMapRect(self)
+        let neighborRect = MKMapRect(neighbor.region)
+
+        if selfRect.intersects(neighborRect) {
+            return recursiveUntilBounds(going: direction, neighbor)
+        } else {
+            return geohash
+        }
+    }
+}
+
+public extension MKMapRect {
+    init(_ coordinateRegion: MKCoordinateRegion) {
+        let topLeft = CLLocationCoordinate2D(
+            latitude: coordinateRegion.center.latitude + (coordinateRegion.span.latitudeDelta/2.0),
+            longitude: coordinateRegion.center.longitude - (coordinateRegion.span.longitudeDelta/2.0)
+        )
+
+        let bottomRight = CLLocationCoordinate2D(
+            latitude: coordinateRegion.center.latitude - (coordinateRegion.span.latitudeDelta/2.0),
+            longitude: coordinateRegion.center.longitude + (coordinateRegion.span.longitudeDelta/2.0)
+        )
+
+        let topLeftMapPoint = MKMapPoint(topLeft)
+        let bottomRightMapPoint = MKMapPoint(bottomRight)
+
+        let origin = MKMapPoint(x: topLeftMapPoint.x,
+                                y: topLeftMapPoint.y)
+        let size = MKMapSize(width: fabs(bottomRightMapPoint.x - topLeftMapPoint.x),
+                             height: fabs(bottomRightMapPoint.y - topLeftMapPoint.y))
+
+        self.init(origin: origin, size: size)
+    }
 }
 #endif
 
