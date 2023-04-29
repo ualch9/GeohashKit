@@ -14,12 +14,22 @@ final class GeohashMapKitTests: XCTestCase {
         )
 
         let region = MKCoordinateRegion(captiolHill)
-        let geohashes = region.geohashes(precision: 6)
 
-        for geohash in geohashes {
-            let geohashRegion = MKMapRect(geohash.region)
-            print(geohashRegion)
-        }
+        // Test high-precision
+        XCTAssertGeohashesEqual(
+            region.geohashes(precision: 6),
+            ["c23nbg", "c23nbm", "c23nbu", "c23nbe", "c23nby", "c23nbx", "c23nbw", "c23nbk", "c23nbz", "c23nbq", "c23nbr", "c23nbv", "c23nbt", "c23nb7", "c23nbs"]
+        )
+
+        XCTAssertGeohashesEqual(
+            region.geohashes(precision: 5),
+            ["c23nb"]
+        )
+    }
+
+    private func XCTAssertGeohashesEqual(_ lhs: Set<Geohash>, _ rhs: Set<String>, _ message: String = "") {
+        let rhsGeohashes = rhs.compactMap(Geohash.init(geohash:))
+        XCTAssertEqual(lhs, Set(rhsGeohashes), message)
     }
 
     static var allTests = [
