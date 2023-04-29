@@ -28,19 +28,40 @@ extension Geohash {
 }
 
 extension MKCoordinateRegion {
+    /// Calculates the Geohashes that contains this `MKCoordinateRegion`. Includes partial geohashes.
+    /// - parameter precision: The Geohash precision to calculate with.
     public func geohashes(precision: Int) -> Set<Geohash> {
         guard let origin = Geohash(self.center, precision: precision) else {
             return []
         }
 
-        // Get the most northwest geohash of the region
+        // 1. Get the most northwest geohash of the region
+        // ┌───┬───┬───┬───┬───┬───┬───┐
+        // │ ★╺│╺╺╺│╺╺╺│╺╮ │   │   │   │
+        // │   │   │   │ ╏ │   │   │   │
+        // │   │   │   │ ╏ │   │   │   │
+        // │   │   │   │ ╏ │   │   │   │    From the center of the region, traverse to the
+        // │   │   │   │ ● │   │   │   │    most northwest corner by going North then West.
+        // │   │   │   │   │   │   │   │
+        // │   │   │   │   │   │   │   │
+        // │   │   │   │   │   │   │   │
+        // └───┴───┴───┴───┴───┴───┴───┘
         let northwestHash = recursiveUntilBounds(going: .west, recursiveUntilBounds(going: .north, origin))
 
         var hashes: Set<Geohash> = []
-
-        // Snakes thru geohash grids
         var currentLeftMostGeohash: Geohash = northwestHash
-        
+
+        // 2. Collect all Geohashes in the MKCoordinateRegion's bounds.
+        // ┌───┬───┬───┬───┬───┬───┬───┐
+        // │ → │ → │ → │ → │ → │ → │ ↵ │
+        // │ → │ → │ → │ → │ → │ → │ ↵ │
+        // │ … │   │   │   │   │   │   │
+        // │   │   │   │   │   │   │   │    Treat the geohash boundary as a matrix with an
+        // │   │   │   │   │   │   │   │    unknown number of columns and rows. Traverse
+        // │   │   │   │   │   │   │   │    each "cell" of the matrix and include the hash
+        // │   │   │   │   │   │   │   │    if it is in the bounds of this MKCoordinateRegion.
+        // │   │   │   │   │   │   │   │
+        // └───┴───┴───┴───┴───┴───┴───┘
         repeat {
             var currentGeohash: Geohash = currentLeftMostGeohash
 
