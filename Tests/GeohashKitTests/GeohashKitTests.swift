@@ -5,21 +5,21 @@ final class GeohashKitTests: XCTestCase {
     // - MARK: encode
     func testEncode() {
         // geohash.org
-        XCTAssertEqual(Geohash(coordinates: (-25.383, -49.266), precision: 8)?.geohash, "6gkzwgjt")
-        XCTAssertEqual(Geohash(coordinates: (-25.382708, -49.265506), precision: 12)?.geohash, "6gkzwgjzn820")
-        XCTAssertEqual(Geohash(coordinates: (-25.427, -49.315), precision: 8)?.geohash, "6gkzmg1u")
+        XCTAssertEqual(Geohash(coordinates: (-25.383, -49.266), precision: 8).geohash, "6gkzwgjt")
+        XCTAssertEqual(Geohash(coordinates: (-25.382708, -49.265506), precision: 12).geohash, "6gkzwgjzn820")
+        XCTAssertEqual(Geohash(coordinates: (-25.427, -49.315), precision: 8).geohash, "6gkzmg1u")
 
         // Geohash Tool
-        XCTAssertEqual(Geohash(coordinates: (-31.953, 115.857), precision: 8)?.geohash, "qd66hrhk")
-        XCTAssertEqual(Geohash(coordinates: (38.89710201881826, -77.03669792041183), precision: 12)?.geohash, "dqcjqcp84c6e")
+        XCTAssertEqual(Geohash(coordinates: (-31.953, 115.857), precision: 8).geohash, "qd66hrhk")
+        XCTAssertEqual(Geohash(coordinates: (38.89710201881826, -77.03669792041183), precision: 12).geohash, "dqcjqcp84c6e")
 
         // Narrow samples.
-        XCTAssertEqual(Geohash(coordinates: (42.6, -5.6), precision: 5)?.geohash, "ezs42")
+        XCTAssertEqual(Geohash(coordinates: (42.6, -5.6), precision: 5).geohash, "ezs42")
     }
 
     func testEncodeDefaultPrecision() {
         // Narrow samples.
-        XCTAssertEqual(Geohash(coordinates: (42.6, -5.6))?.geohash, "ezs42")
+        XCTAssertEqual(Geohash(coordinates: (42.6, -5.6)).geohash, "ezs42")
 
         // XCTAssertEqual(Geohash.encode(latitude: 0, longitude: 0), "s000") // => "s0000" :( hopefully will be resovled by #Issue:1
     }

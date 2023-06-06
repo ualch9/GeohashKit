@@ -31,9 +31,7 @@ extension MKCoordinateRegion {
     /// Calculates the Geohashes that contains this `MKCoordinateRegion`. Includes partial geohashes.
     /// - parameter precision: The Geohash precision to calculate with.
     public func geohashes(precision: Int) -> Set<Geohash> {
-        guard let origin = Geohash(self.center, precision: precision) else {
-            return []
-        }
+        let origin = Geohash(self.center, precision: precision)
 
         // 1. Get the most northwest geohash of the region
         // ┌───┬───┬───┬───┬───┬───┬───┐
@@ -151,8 +149,7 @@ extension Geohash {
     ///            11   ≤ 149mm     x   149mm
     ///            12   ≤ 37.2mm    x   18.6mm
     ///     ```
-    /// - returns: If the specified coordinates are invalid, this returns nil.
-    public init?(_ coordinates: CLLocationCoordinate2D, precision: Int) {
+    public init(_ coordinates: CLLocationCoordinate2D, precision: Int) {
         self.init(coordinates: (coordinates.latitude, coordinates.longitude), precision: precision)
     }
 }

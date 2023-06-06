@@ -120,8 +120,7 @@ public struct Geohash: Hashable, Equatable {
     ///            11   ≤ 149mm     x   149mm
     ///            12   ≤ 37.2mm    x   18.6mm
     ///     ```
-    /// - returns: If the specified coordinates are invalid, this returns nil.
-    public init?(coordinates: Coordinates, precision: Int = Geohash.defaultPrecision) {
+    public init(coordinates: Coordinates, precision: Int = Geohash.defaultPrecision) {
         var lat = (-90.0, 90.0)
         var lon = (-180.0, 180.0)
 
