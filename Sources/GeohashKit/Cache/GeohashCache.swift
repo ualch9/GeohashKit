@@ -5,49 +5,136 @@
 //  Created by Alan Chu on 6/5/23.
 //
 
+#if canImport(CoreLocation)
+import CoreLocation
+
+public protocol Geohashable: Equatable {
+    var coordinates: CLLocationCoordinate2D { get }
+}
+
+enum GeohashableError: Error {
+    case rehashFailed(String)
+}
+
 /// A data structure that organizes elements in a key-value style based on their Geohash.
-public struct GeohashCache<Element> {
+public struct GeohashCache<Element: Geohashable> {
+    public struct Index: Equatable {
+        let geohash: Geohash
+        let arrayIndex: Int
+    }
+
     public var geohashes: [Geohash] {
         Array(cache.keys)
     }
 
     /// A flattened collection of all elements.
     public var elements: [Element] {
-        Array(cache.values)
+        return cache.values.flatMap { $0 }
     }
 
     public internal(set) var geohashPrecision: Int
-    public var activeGeohashes: Set<Geohash> = []
 
-    var cache: [Geohash: Element] = [:]
+    private var cache: [Geohash: [Element]] = [:]
 
-    public subscript(_ hash: String) -> Element? {
-        get {
-            guard let geohash = Geohash(geohash: hash) else {
-                return nil
-            }
-
-            return cache[geohash]
+    public subscript(_ hash: String) -> [Element]? {
+        guard let geohash = Geohash(geohash: hash) else {
+            return nil
         }
+
+        return cache[geohash]
     }
 
-    public subscript(_ geohash: Geohash) -> Element? {
-        get {
-            return cache[geohash]
-        }
-        set {
-            cache[geohash] = newValue
-        }
+    public subscript(_ geohash: Geohash) -> [Element]? {
+        return cache[geohash]
+    }
+
+    public subscript(_ index: Index) -> Element? {
+        return cache[index.geohash]?[index.arrayIndex]
     }
 
     public init(precision: Int) {
         self.geohashPrecision = precision
-        self.activeGeohashes = []
         self.cache = [:]
     }
 
     public func contains(geohash: Geohash) -> Bool {
         return cache.keys.contains(geohash)
+    }
+
+    public func index(of element: Element) -> Index? {
+        let geohash = Geohash(element.coordinates, precision: geohashPrecision)
+        guard let index = self.cache[geohash]?.firstIndex(where: { candidate in
+            candidate == element
+        }) else {
+            return nil
+        }
+
+        return Index(geohash: geohash, arrayIndex: index)
+    }
+
+    @discardableResult
+    public mutating func remove(_ element: Element) -> Element? {
+        guard let index = self.index(of: element) else {
+            return nil
+        }
+
+        return self.remove(at: index)
+    }
+
+    @discardableResult
+    public mutating func remove(at index: Index) -> Element? {
+        return self.cache[index.geohash]?.remove(at: index.arrayIndex)
+    }
+
+    public mutating func insert(_ newElement: Element) {
+        let geohash = Geohash(newElement.coordinates, precision: self.geohashPrecision)
+        self.cache[geohash, default: []].append(newElement)
+    }
+
+    /// - precondition: `precision` is a non-zero positive integer.
+    /// - throws: ``GeohashableError`` if an error occurs while rehashing to a lower precision.
+    public mutating func rehash(precision: Int) throws {
+        precondition(precision > 0)
+
+        // A lower precision involves truncating the existing geohash string.
+        func rehashLowerPrecision(precision newPrecision: Int) throws -> [Geohash: [Element]] {
+            var newCache: [Geohash: [Element]] = [:]
+
+            for (_, keyValue) in self.cache.enumerated() {
+                let truncated = keyValue.key.geohash.prefix(newPrecision)
+                guard let newGeohash = Geohash(geohash: String(truncated)) else {
+                    throw GeohashableError.rehashFailed("Unexpected geohash truncation result")
+                }
+
+                newCache[newGeohash, default: []].append(contentsOf: keyValue.value)
+            }
+
+            return newCache
+        }
+
+        // A higher precision involves recalculating the geohash.
+        func rehashHigherPrecision(precision: Int) -> [Geohash: [Element]] {
+            var newCache: [Geohash: [Element]] = [:]
+
+            for collection in self.cache.values {
+                for element in collection {
+                    let newGeohash = Geohash(element.coordinates, precision: precision)
+                    newCache[newGeohash, default: []].append(element)
+                }
+            }
+
+            return newCache
+        }
+
+        if precision < self.geohashPrecision {
+            self.cache = try rehashLowerPrecision(precision: precision)
+            self.geohashPrecision = precision
+        } else if precision > self.geohashPrecision {
+            self.cache = rehashHigherPrecision(precision: precision)
+            self.geohashPrecision = precision
+        } else {
+            return  // Equal geohash precision.
+        }
     }
 
     /// Updates/Inserts element for the given geohash key, and returns the difference result.
@@ -90,3 +177,4 @@ public struct GeohashCache<Element> {
 //    }
 }
 
+#endif

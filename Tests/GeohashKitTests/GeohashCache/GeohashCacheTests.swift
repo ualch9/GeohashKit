@@ -26,19 +26,46 @@ final class GeohashCacheTests: XCTestCase {
         }
     }
 
+    // MARK: Test fixtures
+    let c23nbsLocations: [TestLocation] = [
+        .init(latitude: 47.61524, longitude: -122.32080),   // Broadway & Pine (c23nbs)
+        .init(latitude: 47.61515, longitude: -122.31128),   // Madison & Pine (c23nbs)
+    ]
+
+    let c23nbeLocations: [TestLocation] = [
+        .init(latitude: 47.61117, longitude: -122.32080),   // Madison & Broadway (c23nbe)
+    ]
+
+    lazy var allLocations = {
+        c23nbsLocations + c23nbeLocations
+    }()
+
+    // MARK: Test cases
+    func testAddRemove() throws {
+        var collection = GeohashCache<TestLocation>(precision: 6)
+
+        // Add element
+        for location in allLocations {
+            collection.insert(location)
+        }
+        XCTAssertEqual(collection.elements.count, allLocations.count)
+        XCTAssertEqual(collection.geohashes.count, 2)
+
+        // Get index
+        let c23nbeLocationIndex = try XCTUnwrap(collection.index(of: c23nbeLocations[0]), "Expected to get the index of an inserted element.")
+        XCTAssertEqual(collection[c23nbeLocationIndex], c23nbeLocations[0])
+
+        // Remove element
+        let removed = try XCTUnwrap(collection.remove(c23nbsLocations[0]), "Expected to remove an element")
+        XCTAssertEqual(removed, c23nbsLocations[0])
+        XCTAssertEqual(collection.elements.count, allLocations.count - 1)
+        XCTAssertEqual(collection.geohashes.count, 2)
+
+        XCTAssertNotNil(collection.index(of: c23nbsLocations[1]))
+    }
+
     func testRehash() throws {
-        let c23nbsLocations: [TestLocation] = [
-            .init(latitude: 47.61524, longitude: -122.32080),   // Broadway & Pine (c23nbs)
-            .init(latitude: 47.61515, longitude: -122.31128),   // Madison & Pine (c23nbs)
-        ]
-
-        let c23nbeLocations: [TestLocation] = [
-            .init(latitude: 47.61117, longitude: -122.32080),   // Madison & Broadway (c23nbe)
-        ]
-
-        let allLocations = c23nbsLocations + c23nbeLocations
-
-        var collection = GeohashCache<[TestLocation]>(precision: 6)
+        var collection = GeohashCache<TestLocation>(precision: 6)
         for location in allLocations {
             collection.insert(location)
         }
